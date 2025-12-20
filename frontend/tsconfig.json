@@ -30,7 +30,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-, "src/app/employee/EmployeeForm.js"  ],
+, "src/app/predict/page.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -40,8 +40,8 @@ export default function LoginForm() {
 
     const data = await response.json();
     localStorage.setItem("token", data.access_token);
-    alert("Connexion réussie !");
-    router.push('/analyze'); // redirige vers la page protégée
+    // alert("Connexion réussie !");
+    router.push('predict'); 
   };
 
   const handleSubmit = (e) => {
