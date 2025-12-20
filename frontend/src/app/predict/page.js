@@ -3,21 +3,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Brain,
-  Users,
-  Briefcase,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  LogOut,
-  Calendar,
-  DollarSign,
-  Star,
-  Home,
-  Plane,
-  Clock,
-  MapPin
+  Brain, Users, Briefcase, TrendingUp, AlertCircle, CheckCircle,
+  Loader2, LogOut, Calendar, DollarSign, Star, Home, Plane,
+  Clock, MapPin, GraduationCap, Heart, UserCircle, BarChart3,
+  Layers, Award, Hash, Building2, UserPlus, Milestone
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -31,7 +20,6 @@ export default function AnalyzePage() {
   const [retentionPlan, setRetentionPlan] = useState(null);
   const [errors, setErrors] = useState({});
 
-  // Form data
   const [formData, setFormData] = useState({
     age: '',
     department: 'IT',
@@ -45,7 +33,6 @@ export default function AnalyzePage() {
     over_time: 'No',
     distance_from_home: '',
     employee_id: '',
-    // Champs manquants avec valeurs par défaut
     education: '3',
     education_field: 'Life Sciences',
     gender: 'Male',
@@ -64,8 +51,9 @@ export default function AnalyzePage() {
   const departments = ['IT', 'Sales', 'HR', 'Marketing', 'Finance', 'Operations', 'R&D'];
   const jobRoles = ['Manager', 'Developer', 'Analyst', 'Specialist', 'Engineer', 'Consultant'];
   const travelOptions = ['Non-Travel', 'Travel_Rarely', 'Travel_Frequently'];
+  const educationFields = ['Life Sciences', 'Medical', 'Marketing', 'Technical Degree', 'Other', 'Human Resources'];
+  const maritalStatuses = ['Single', 'Married', 'Divorced'];
 
-  // Vérifier l'authentification
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     if (!storedToken) {
@@ -83,17 +71,15 @@ export default function AnalyzePage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.age || formData.age < 18 || formData.age > 100) newErrors.age = 'L\'âge doit être entre 18 et 100 ans';
-    if (!formData.years_at_company || formData.years_at_company < 0) newErrors.years_at_company = 'Les années doivent être >= 0';
-    if (!formData.monthly_income || formData.monthly_income <= 0) newErrors.monthly_income = 'Le revenu doit être > 0';
-    if (!formData.distance_from_home || formData.distance_from_home < 0) newErrors.distance_from_home = 'La distance doit être >= 0';
+    if (!formData.age || formData.age < 18) newErrors.age = "Âge requis (min 18)";
+    if (!formData.years_at_company) newErrors.years_at_company = "Champ requis";
+    if (!formData.monthly_income) newErrors.monthly_income = "Revenu requis";
+    if (!formData.total_working_years) newErrors.total_working_years = "Champ requis";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -101,11 +87,8 @@ export default function AnalyzePage() {
   const handlePredict = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setLoading(true);
-    setPredictionResult(null);
-    setRetentionPlan(null);
-
+    
     try {
       const employeeData = {
         Age: parseInt(formData.age),
@@ -125,500 +108,309 @@ export default function AnalyzePage() {
         OverTime: formData.over_time,
         PerformanceRating: parseInt(formData.performance_rating),
         StockOptionLevel: parseInt(formData.stock_option_level),
-        TotalWorkingYears: parseInt(formData.total_working_years || formData.years_at_company),
+        TotalWorkingYears: parseInt(formData.total_working_years),
         WorkLifeBalance: parseInt(formData.work_life_balance),
         YearsAtCompany: parseInt(formData.years_at_company),
         YearsInCurrentRole: parseInt(formData.years_in_current_role),
         YearsWithCurrManager: parseInt(formData.years_with_curr_manager)
       };
 
-      // Appel API prédiction
-      const predictResponse = await fetch('http://localhost:8000/predict', {
+      const res = await fetch('http://localhost:8000/predict', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(employeeData)
       });
 
-      if (!predictResponse.ok) {
-        if (predictResponse.status === 401) {
-          alert('Session expirée. Veuillez vous reconnecter.');
-          handleLogout();
-          return;
-        }
-        const errorData = await predictResponse.json();
-        throw new Error(errorData.detail || 'Erreur de prédiction');
-      }
-
-      const predictionData = await predictResponse.json();
-      setPredictionResult(predictionData);
-
-      if (predictionData.churn_probability > 0.5) {
-        const retentionResponse = await fetch('http://localhost:8000/generate-retention-plan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            employee_data: employeeData,
-            churn_probability: predictionData.churn_probability
-          })
-        });
-
-        if (retentionResponse.ok) {
-          const retentionData = await retentionResponse.json();
-          setRetentionPlan(retentionData);
+      if (res.ok) {
+        const data = await res.json();
+        setPredictionResult(data);
+        if (data.churn_probability > 0.5) {
+          const retRes = await fetch('http://localhost:8000/generate-retention-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ employee_data: employeeData, churn_probability: data.churn_probability })
+          });
+          if (retRes.ok) setRetentionPlan(await retRes.json());
         }
       }
-    } catch (error) {
-      alert(error.message || 'Une erreur est survenue');
+    } catch (err) {
+      alert("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
     }
   };
 
-  const getRiskColor = (p) => p >= 0.7 ? 'from-red-500 to-red-600' : p >= 0.5 ? 'from-orange-500 to-orange-600' : 'from-green-500 to-green-600';
-  const getRiskLabel = (p) => p >= 0.7 ? 'RISQUE ÉLEVÉ' : p >= 0.5 ? 'RISQUE MOYEN' : 'RISQUE FAIBLE';
-
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-[#FF6B35]/5 p-6 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <motion.div
-          className="absolute top-20 right-20 w-96 h-96 bg-[#FF6B35]/5 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-20 left-20 w-80 h-80 bg-[#4A5568]/5 rounded-full blur-3xl"
-          animate={{ scale: [1.3, 1, 1.3], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 12, repeat: Infinity }}
-        />
-      </div>
-
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto mb-8 relative z-10"
-      >
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm border">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#FF8C5A] flex items-center justify-center shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
+            <div className="p-2 bg-[#FF6B35] rounded-lg text-white"><Brain size={28} /></div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#FF8C5A] bg-clip-text text-transparent">
-                RH Intelligence
-              </h1>
-              <p className="text-sm text-muted-foreground">Analyse prédictive des départs</p>
+              <h1 className="text-xl font-bold text-slate-800">RH Intelligence</h1>
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Predictive Analytics Dashboard</p>
             </div>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-border/50 hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Déconnexion
+          <Button onClick={handleLogout} variant="ghost" className="text-slate-600 hover:text-red-500">
+            <LogOut size={18} className="mr-2" /> Quitter
           </Button>
         </div>
-      </motion.div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
-        {/* Formulaire */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Users className="w-6 h-6 text-[#FF6B35]" />
-              <h2 className="text-xl font-bold">Profil de l'employé</h2>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Formulaire - 7 colonnes */}
+          <div className="lg:col-span-7 space-y-6">
+            <form onSubmit={handlePredict} className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 space-y-8">
+              
+              {/* Identité & Base */}
+              <section>
+                <div className="flex items-center gap-2 mb-4 text-[#FF6B35]">
+                  <UserCircle size={20} />
+                  <h2 className="font-bold text-slate-800">Informations de base</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">ID Employé</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                      <Input name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="pl-9" placeholder="EMP-001" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Âge</Label>
+                    <Input name="age" type="number" value={formData.age} onChange={handleInputChange} className={errors.age ? "border-red-500" : ""} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Genre</Label>
+                    <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      <option value="Male">Homme</option>
+                      <option value="Female">Femme</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500 text-flex items-center gap-1"><Heart size={12}/> État Civil</Label>
+                    <select name="marital_status" value={formData.marital_status} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      {maritalStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-xs uppercase text-slate-500">Distance Domicile (km)</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                      <Input name="distance_from_home" type="number" value={formData.distance_from_home} onChange={handleInputChange} className="pl-9" />
+                    </div>
+                  </div>
+                </div>
+              </section>
 
-            <form onSubmit={handlePredict} className="space-y-4">
-              {/* ID Employé (optionnel) */}
-              <div>
-                <Label htmlFor="employee_id" className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-[#FF6B35]" />
-                  ID Employé (optionnel)
-                </Label>
-                <Input
-                  id="employee_id"
-                  name="employee_id"
-                  value={formData.employee_id}
-                  onChange={handleInputChange}
-                  placeholder="EMP001"
-                  className="bg-input-background border-border/50 focus:border-[#FF6B35]"
-                />
-              </div>
+              {/* Éducation & Poste */}
+              <section className="pt-6 border-t">
+                <div className="flex items-center gap-2 mb-4 text-[#FF6B35]">
+                  <Briefcase size={20} />
+                  <h2 className="font-bold text-slate-800">Carrière & Éducation</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Département</Label>
+                    <select name="department" value={formData.department} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Rôle</Label>
+                    <select name="job_role" value={formData.job_role} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      {jobRoles.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Niveau d'études (1-5)</Label>
+                    <Input name="education" type="number" min="1" max="5" value={formData.education} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Domaine d'études</Label>
+                    <select name="education_field" value={formData.education_field} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      {educationFields.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </section>
 
-              {/* Âge */}
-              <div>
-                <Label htmlFor="age" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#FF6B35]" />
-                  Âge *
-                </Label>
-                <Input
-                  id="age"
-                  name="age"
-                  type="number"
-                  value={formData.age}
-                  onChange={handleInputChange}
-                  placeholder="35"
-                  required
-                  className="bg-input-background border-border/50 focus:border-[#FF6B35]"
-                />
-                {errors.age && <p className="text-sm text-destructive mt-1">{errors.age}</p>}
-              </div>
+              {/* Expérience Temporelle */}
+              <section className="pt-6 border-t">
+                <div className="flex items-center gap-2 mb-4 text-[#FF6B35]">
+                  <Calendar size={20} />
+                  <h2 className="font-bold text-slate-800">Ancienneté & Expérience</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Expérience Totale</Label>
+                    <Input name="total_working_years" type="number" value={formData.total_working_years} onChange={handleInputChange} placeholder="ans" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Années ici</Label>
+                    <Input name="years_at_company" type="number" value={formData.years_at_company} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Nb Entreprises</Label>
+                    <Input name="num_companies_worked" type="number" value={formData.num_companies_worked} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Années poste actuel</Label>
+                    <Input name="years_in_current_role" type="number" value={formData.years_in_current_role} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Années / Manager</Label>
+                    <Input name="years_with_curr_manager" type="number" value={formData.years_with_curr_manager} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500">Niveau Job (1-5)</Label>
+                    <Input name="job_level" type="number" min="1" max="5" value={formData.job_level} onChange={handleInputChange} />
+                  </div>
+                </div>
+              </section>
 
-              {/* Département */}
-              <div>
-                <Label htmlFor="department" className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-[#FF6B35]" />
-                  Département *
-                </Label>
-                <select
-                  id="department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-input-background border border-border/50 rounded-md focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
-                >
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+              {/* Finance & Conditions */}
+              <section className="pt-6 border-t">
+                <div className="flex items-center gap-2 mb-4 text-[#FF6B35]">
+                  <DollarSign size={20} />
+                  <h2 className="font-bold text-slate-800">Finance & Rythme</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase text-slate-500">Salaire Mensuel (€)</Label>
+                      <Input name="monthly_income" type="number" value={formData.monthly_income} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase text-slate-500">Taux Mensuel (Global)</Label>
+                      <Input name="monthly_rate" type="number" value={formData.monthly_rate} onChange={handleInputChange} />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase text-slate-500">% Augmentation</Label>
+                      <Input name="percent_salary_hike" type="number" value={formData.percent_salary_hike} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase text-slate-500">Stock Options (0-3)</Label>
+                      <Input name="stock_option_level" type="number" min="0" max="3" value={formData.stock_option_level} onChange={handleInputChange} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500 flex items-center gap-1"><Plane size={14}/> Voyages Pro</Label>
+                    <select name="business_travel" value={formData.business_travel} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      {travelOptions.map(o => <option key={o} value={o}>{o.replace('_', ' ')}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase text-slate-500 flex items-center gap-1"><Clock size={14}/> Heures Supplémentaires</Label>
+                    <select name="over_time" value={formData.over_time} onChange={handleInputChange} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      <option value="No">Non</option>
+                      <option value="Yes">Oui</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              {/* Sliders d'engagement */}
+              <section className="pt-6 border-t bg-slate-50/50 -mx-8 px-8 py-6 rounded-b-2xl">
+                <div className="flex items-center gap-2 mb-6 text-[#FF6B35]">
+                  <TrendingUp size={20} />
+                  <h2 className="font-bold text-slate-800">Évaluation & Satisfaction</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                  {[
+                    { id: 'job_satisfaction', label: 'Satisfaction Job', icon: Star },
+                    { id: 'work_life_balance', label: 'Équilibre Vie P/P', icon: Home },
+                    { id: 'performance_rating', label: 'Performance', icon: Award },
+                    { id: 'job_involvement', label: 'Implication', icon: Users },
+                  ].map((item) => (
+                    <div key={item.id} className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-xs uppercase font-semibold text-slate-600 flex items-center gap-2">
+                          <item.icon size={14} className="text-[#FF6B35]" /> {item.label}
+                        </Label>
+                        <span className="text-sm font-bold text-[#FF6B35]">{formData[item.id]}/5</span>
+                      </div>
+                      <input 
+                        type="range" name={item.id} min="1" max="5" 
+                        value={formData[item.id]} onChange={handleInputChange}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#FF6B35]"
+                      />
+                    </div>
                   ))}
-                </select>
-              </div>
+                </div>
+              </section>
 
-              {/* Rôle */}
-              <div>
-                <Label htmlFor="job_role" className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#FF6B35]" />
-                  Rôle *
-                </Label>
-                <select
-                  id="job_role"
-                  name="job_role"
-                  value={formData.job_role}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-input-background border border-border/50 rounded-md focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
-                >
-                  {jobRoles.map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Années dans l'entreprise */}
-              <div>
-                <Label htmlFor="years_at_company" className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[#FF6B35]" />
-                  Années dans l'entreprise *
-                </Label>
-                <Input
-                  id="years_at_company"
-                  name="years_at_company"
-                  type="number"
-                  value={formData.years_at_company}
-                  onChange={handleInputChange}
-                  placeholder="5"
-                  required
-                  className="bg-input-background border-border/50 focus:border-[#FF6B35]"
-                />
-                {errors.years_at_company && <p className="text-sm text-destructive mt-1">{errors.years_at_company}</p>}
-              </div>
-
-              {/* Revenu mensuel */}
-              <div>
-                <Label htmlFor="monthly_income" className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-[#FF6B35]" />
-                  Revenu mensuel (€) *
-                </Label>
-                <Input
-                  id="monthly_income"
-                  name="monthly_income"
-                  type="number"
-                  value={formData.monthly_income}
-                  onChange={handleInputChange}
-                  placeholder="5000"
-                  required
-                  className="bg-input-background border-border/50 focus:border-[#FF6B35]"
-                />
-                {errors.monthly_income && <p className="text-sm text-destructive mt-1">{errors.monthly_income}</p>}
-              </div>
-
-              {/* Satisfaction au travail */}
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-[#FF6B35]" />
-                  Satisfaction au travail: {formData.job_satisfaction}/5
-                </Label>
-                <input
-                  type="range"
-                  name="job_satisfaction"
-                  min="1"
-                  max="5"
-                  value={formData.job_satisfaction}
-                  onChange={handleInputChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FF6B35]"
-                />
-              </div>
-
-              {/* Équilibre vie pro/perso */}
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-[#FF6B35]" />
-                  Équilibre vie pro/perso: {formData.work_life_balance}/5
-                </Label>
-                <input
-                  type="range"
-                  name="work_life_balance"
-                  min="1"
-                  max="5"
-                  value={formData.work_life_balance}
-                  onChange={handleInputChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FF6B35]"
-                />
-              </div>
-
-              {/* Performance */}
-              <div>
-                <Label className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[#FF6B35]" />
-                  Performance: {formData.performance_rating}/5
-                </Label>
-                <input
-                  type="range"
-                  name="performance_rating"
-                  min="1"
-                  max="5"
-                  value={formData.performance_rating}
-                  onChange={handleInputChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FF6B35]"
-                />
-              </div>
-
-              {/* Voyages professionnels */}
-              <div>
-                <Label htmlFor="business_travel" className="flex items-center gap-2">
-                  <Plane className="w-4 h-4 text-[#FF6B35]" />
-                  Voyages professionnels *
-                </Label>
-                <select
-                  id="business_travel"
-                  name="business_travel"
-                  value={formData.business_travel}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-input-background border border-border/50 rounded-md focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
-                >
-                  {travelOptions.map(option => (
-                    <option key={option} value={option}>
-                      {option === 'Non-Travel' ? 'Aucun' : 
-                       option === 'Travel_Rarely' ? 'Rarement' : 
-                       'Fréquemment'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Heures supplémentaires */}
-              <div>
-                <Label htmlFor="over_time" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#FF6B35]" />
-                  Heures supplémentaires *
-                </Label>
-                <select
-                  id="over_time"
-                  name="over_time"
-                  value={formData.over_time}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-input-background border border-border/50 rounded-md focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
-                >
-                  <option value="No">Non</option>
-                  <option value="Yes">Oui</option>
-                </select>
-              </div>
-
-              {/* Distance domicile-travail */}
-              <div>
-                <Label htmlFor="distance_from_home" className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#FF6B35]" />
-                  Distance domicile-travail (km) *
-                </Label>
-                <Input
-                  id="distance_from_home"
-                  name="distance_from_home"
-                  type="number"
-                  value={formData.distance_from_home}
-                  onChange={handleInputChange}
-                  placeholder="15"
-                  required
-                  className="bg-input-background border-border/50 focus:border-[#FF6B35]"
-                />
-                {errors.distance_from_home && <p className="text-sm text-destructive mt-1">{errors.distance_from_home}</p>}
-              </div>
-
-              {/* Bouton d'analyse */}
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-[#FF6B35] to-[#FF8C5A] hover:shadow-lg hover:shadow-[#FF6B35]/20 transition-all"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Analyse en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="w-4 h-4 mr-2" />
-                      Analyser le profil
-                    </>
-                  )}
-                </Button>
-              </motion.div>
+              <Button type="submit" disabled={loading} className="w-full bg-[#FF6B35] hover:bg-[#e85a2a] h-14 text-lg font-bold shadow-lg shadow-[#FF6B35]/20">
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <Brain className="mr-2" />}
+                Lancer l'Analyse Prédictive
+              </Button>
             </form>
           </div>
-        </motion.div>
 
-        {/* Résultats */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-6"
-        >
-          {/* Résultat de prédiction */}
-          <AnimatePresence>
-            {predictionResult && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-6"
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <AlertCircle className="w-6 h-6 text-[#FF6B35]" />
-                  <h2 className="text-xl font-bold">Résultat de l'analyse</h2>
-                </div>
-
-                {/* Gauge visuelle */}
-                <div className="text-center mb-6">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                    className="inline-block"
-                  >
-                    <div className={`w-40 h-40 rounded-full bg-gradient-to-br ${getRiskColor(predictionResult.churn_probability)} flex items-center justify-center shadow-lg mx-auto mb-4`}>
-                      <div className="text-center">
-                        <div className="text-4xl font-bold text-white">
-                          {Math.round(predictionResult.churn_probability * 100)}%
-                        </div>
-                        <div className="text-sm text-white/90">Risque</div>
-                      </div>
+          {/* Résultats - 5 colonnes */}
+          <div className="lg:col-span-5 space-y-6">
+            <AnimatePresence mode="wait">
+              {predictionResult ? (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                  {/* Carte Score */}
+                  <div className="bg-white rounded-2xl border p-8 shadow-sm text-center">
+                    <h3 className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-6">Probabilité de départ</h3>
+                    <div className="relative inline-flex items-center justify-center mb-6">
+                      <svg className="w-48 h-48 transform -rotate-90">
+                        <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
+                        <circle 
+                          cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" 
+                          strokeDasharray={552} 
+                          strokeDashoffset={552 - (552 * predictionResult.churn_probability)}
+                          className={predictionResult.churn_probability > 0.5 ? "text-red-500" : "text-green-500"} 
+                        />
+                      </svg>
+                      <span className="absolute text-5xl font-black text-slate-800">
+                        {Math.round(predictionResult.churn_probability * 100)}%
+                      </span>
                     </div>
-                  </motion.div>
-
-                  <div className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
-                    predictionResult.churn_probability >= 0.7 ? 'bg-red-100 text-red-800' :
-                    predictionResult.churn_probability >= 0.5 ? 'bg-orange-100 text-orange-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {getRiskLabel(predictionResult.churn_probability)}
+                    <div className={`py-2 px-4 rounded-full text-sm font-bold inline-block ${
+                      predictionResult.churn_probability > 0.7 ? "bg-red-100 text-red-700" : 
+                      predictionResult.churn_probability > 0.4 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
+                    }`}>
+                      {predictionResult.churn_probability > 0.5 ? "RISQUE DÉTECTÉ" : "PROFIL STABLE"}
+                    </div>
                   </div>
-                </div>
 
-                {/* Détails */}
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-muted-foreground">Probabilité de départ</span>
-                    <span className="font-semibold">{(predictionResult.churn_probability * 100).toFixed(2)}%</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-muted-foreground">Niveau de risque</span>
-                    <span className="font-semibold">{predictionResult.risk_level}</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-muted-foreground">Date d'analyse</span>
-                    <span className="font-semibold">
-                      {new Date(predictionResult.timestamp).toLocaleDateString('fr-FR')}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Plan de rétention */}
-          <AnimatePresence>
-            {retentionPlan && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ delay: 0.3 }}
-                className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-6"
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                  <h2 className="text-xl font-bold">Plan de rétention recommandé</h2>
-                </div>
-
-                <div className="space-y-4">
-                  {retentionPlan.retention_plan.map((action, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + index * 0.1 }}
-                      className="flex gap-3 p-4 bg-gradient-to-r from-green-50/50 to-transparent border-l-4 border-green-500 rounded-lg"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                        {index + 1}
+                  {/* Plan de rétention */}
+                  {retentionPlan && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl border border-green-200 shadow-sm overflow-hidden">
+                      <div className="bg-green-50 px-6 py-4 border-b border-green-100 flex items-center gap-2">
+                        <CheckCircle className="text-green-600" size={20} />
+                        <h3 className="font-bold text-green-800">Plan de Rétention IA</h3>
                       </div>
-                      <p className="text-sm flex-1 leading-relaxed">{action}</p>
+                      <div className="p-6 space-y-4">
+                        {retentionPlan.retention_plan.map((step, i) => (
+                          <div key={i} className="flex gap-4 items-start">
+                            <div className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{i+1}</div>
+                            <p className="text-sm text-slate-700 leading-relaxed">{step}</p>
+                          </div>
+                        ))}
+                      </div>
                     </motion.div>
-                  ))}
-                </div>
-
-                <div className="mt-6 p-4 bg-blue-50/50 border border-blue-200/50 rounded-lg">
-                  <p className="text-sm text-blue-900 flex items-start gap-2">
-                    <Brain className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <span>
-                      Ces recommandations ont été générées automatiquement par notre IA en fonction du profil de l'employé.
-                    </span>
+                  )}
+                </motion.div>
+              ) : (
+                <div className="bg-slate-100 border-2 border-dashed border-slate-200 rounded-2xl h-[600px] flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+                    <Brain size={40} className="text-slate-400" />
+                  </div>
+                  <h3 className="text-slate-800 font-bold text-lg">En attente de données</h3>
+                  <p className="text-slate-500 text-sm max-w-[250px] mt-2">
+                    Remplissez le profil de l'employé à gauche pour générer l'analyse.
                   </p>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* État initial */}
-          {!predictionResult && !loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-card/50 backdrop-blur-xl border border-dashed border-border/50 rounded-2xl p-12 text-center"
-            >
-              <Brain className="w-16 h-16 mx-auto mb-4 text-[#FF6B35] opacity-50" />
-              <h3 className="text-lg font-semibold mb-2 text-muted-foreground">
-                Prêt pour l'analyse
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Remplissez le formulaire et cliquez sur "Analyser le profil" pour obtenir une prédiction.
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );
