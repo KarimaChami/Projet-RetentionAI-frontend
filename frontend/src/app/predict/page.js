@@ -380,7 +380,7 @@ export default function AnalyzePage() {
                   </div>
 
                   {/* Plan de rétention */}
-                  {retentionPlan && (
+                  {retentionPlan && predictionResult?.churn_probability > 0.5 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl border border-green-200 shadow-sm overflow-hidden">
                       <div className="bg-green-50 px-6 py-4 border-b border-green-100 flex items-center gap-2">
                         <CheckCircle className="text-green-600" size={20} />
