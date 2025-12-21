@@ -384,7 +384,7 @@ export default function AnalyzePage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl border border-green-200 shadow-sm overflow-hidden">
                       <div className="bg-green-50 px-6 py-4 border-b border-green-100 flex items-center gap-2">
                         <CheckCircle className="text-green-600" size={20} />
-                        <h3 className="font-bold text-green-800">Plan de Rétention IA</h3>
+                        <h3 className="font-bold text-green-800">Plan de Rétention : </h3>
                       </div>
                       <div className="p-6 space-y-4">
                         {retentionPlan.retention_plan.map((step, i) => (
